@@ -1,0 +1,50 @@
+{
+    "formTitle": "Employee Attendance Check-in",
+    "formDescription": "Please complete this form to check in for work. Your GPS location will be automatically captured to verify your presence at the work site.",
+    "formFields": [
+        {
+            "type": "SHORT_ANSWER",
+            "title": "Full Name",
+            "description": "Enter your full name as it appears in company records",
+            "required": true
+        },
+        {
+            "type": "EMAIL",
+            "title": "Email Address",
+            "description": "Enter your company email address",
+            "required": true
+        },
+        {
+            "type": "SHORT_ANSWER",
+            "title": "GPS Coordinates",
+            "description": "This field will be automatically filled with your current location",
+            "required": true,
+            "entryId": "entry.XXXXXXXXXX"
+        },
+        {
+            "type": "DROPDOWN",
+            "title": "Department",
+            "description": "Select your department",
+            "required": true,
+            "options": [
+                "Administration",
+                "Finance",
+                "Human Resources",
+                "Information Technology",
+                "Marketing",
+                "Operations",
+                "Sales",
+                "Other"
+            ]
+        },
+        {
+            "type": "PARAGRAPH",
+            "title": "Comments (Optional)",
+            "description": "Any additional information you'd like to provide",
+            "required": false
+        }
+    ],
+    "confirmationMessage": "Thank you for checking in! Your attendance has been recorded and will be validated based on your location.",
+    "collectEmailAddresses": true,
+    "limitToOneResponse": false
+}

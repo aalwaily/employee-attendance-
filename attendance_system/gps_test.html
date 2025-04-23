@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Location Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .pending {
+            background-color: #fff9c4;
+            border: 1px solid #fbc02d;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+        }
+
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #f44336;
+        }
+
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 20px auto;
+        }
+
+        button:hover {
+            background-color: #0d47a1;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .distance-calculator {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #1a73e8;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>GPS Location Test</h1>
+        <p>This page tests if your device can accurately detect your GPS location. Use this to verify that location
+            detection is working before deploying the full attendance system.</p>
+
+        <div id="status" class="status pending">
+            <h2>Location Access Required</h2>
+            <p>Click the button below to test your device's GPS capabilities.</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Detecting your location...</p>
+        </div>
+
+        <button id="getLocationBtn">Get My Location</button>
+
+        <div id="result" class="result" style="display: none;"></div>
+
+        <div class="distance-calculator">
+            <h2>Distance Calculator</h2>
+            <p>Enter the coordinates of your work site to calculate the distance from your current location:</p>
+
+            <div class="form-group">
+                <label for="siteLat">Site Latitude:</label>
+                <input type="text" id="siteLat" value="26.4334" placeholder="e.g., 26.4334">
+            </div>
+
+            <div class="form-group">
+                <label for="siteLong">Site Longitude:</label>
+                <input type="text" id="siteLong" value="50.1033" placeholder="e.g., 50.1033">
+            </div>
+
+            <button id="calculateBtn" disabled>Calculate Distance</button>
+
+            <div id="distanceResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const getLocationBtn = document.getElementById('getLocationBtn');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const status = document.getElementById('status');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const distanceResult = document.getElementById('distanceResult');
+        const siteLat = document.getElementById('siteLat');
+        const siteLong = document.getElementById('siteLong');
+
+        // Store the detected coordinates
+        let currentLat = null;
+        let currentLong = null;
+        let currentAccuracy = null;
+
+        // Check for URL parameters
+        function getUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const lat = urlParams.get('lat');
+            const lng = urlParams.get('lng');
+
+            if (lat && lng) {
+                siteLat.value = lat;
+                siteLong.value = lng;
+            }
+        }
+
+        // Call on page load
+        getUrlParameters();
+
+        // Function to get user's location
+        function getLocation() {
+            // Reset UI
+            status.className = 'status pending';
+            status.innerHTML = '<h2>Detecting Location...</h2><p>Please wait while we access your device\'s GPS.</p>';
+            result.style.display = 'none';
+            distanceResult.style.display = 'none';
+            calculateBtn.disabled = true;
+            loading.style.display = 'block';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                showError({ code: 0, message: "Geolocation is not supported by this browser." });
+            }
+        }
+
+        // Function to handle successful location retrieval
+        function showPosition(position) {
+            currentLat = position.coords.latitude;
+            currentLong = position.coords.longitude;
+            currentAccuracy = position.coords.accuracy;
+
+            // Update UI
+            loading.style.display = 'none';
+            status.className = 'status success';
+            status.innerHTML = '<h2>Location Detected Successfully!</h2><p>Your device\'s GPS is working properly.</p>';
+
+            // Display the results
+            result.style.display = 'block';
+            result.innerHTML = `
+Latitude: ${currentLat.toFixed(6)}
+Longitude: ${currentLong.toFixed(6)}
+Accuracy: ±${currentAccuracy.toFixed(1)} meters
+
+Timestamp: ${new Date().toLocaleString()}
+
+User Agent: ${navigator.userAgent}
+`;
+
+            // Enable the calculate button
+            calculateBtn.disabled = false;
+        }
+
+        // Function to handle location errors
+        function showError(error) {
+            loading.style.display = 'none';
+            status.className = 'status error';
+
+            let errorMessage = '';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = "Location access was denied. Please allow location access in your browser settings and try again.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = "Location information is unavailable. Please ensure your device has GPS capabilities and try again.";
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = "The request to get location timed out. This might indicate poor GPS signal. Please try again in a different location.";
+                    break;
+                default:
+                    errorMessage = "An unknown error occurred while trying to get your location. Please try again.";
+                    break;
+            }
+
+            status.innerHTML = `<h2>Location Error</h2><p>${errorMessage}</p>`;
+        }
+
+        // Function to calculate distance between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth's radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in meters
+        }
+
+        // Function to calculate distance to site
+        function calculateDistanceToSite() {
+            const siteLatitude = parseFloat(siteLat.value);
+            const siteLongitude = parseFloat(siteLong.value);
+
+            if (isNaN(siteLatitude) || isNaN(siteLongitude)) {
+                distanceResult.style.display = 'block';
+                distanceResult.innerHTML = 'Error: Please enter valid coordinates for the site.';
+                return;
+            }
+
+            if (currentLat === null || currentLong === null) {
+                distanceResult.style.display = 'block';
+                distanceResult.innerHTML = 'Error: Your current location has not been detected yet. Please click "Get My Location" first.';
+                return;
+            }
+
+            const distance = calculateDistance(currentLat, currentLong, siteLatitude, siteLongitude);
+            const isWithinRange = distance <= 100; // 100 meters is the default range
+
+            distanceResult.style.display = 'block';
+            distanceResult.innerHTML = `
+Distance to site: ${distance.toFixed(2)} meters
+
+Status: ${isWithinRange ? '✅ Within range (100m)' : '❌ Outside range (100m)'}
+
+Your coordinates: ${currentLat.toFixed(6)}, ${currentLong.toFixed(6)}
+Site coordinates: ${siteLatitude.toFixed(6)}, ${siteLongitude.toFixed(6)}
+`;
+        }
+
+        // Event listeners
+        getLocationBtn.addEventListener('click', getLocation);
+        calculateBtn.addEventListener('click', calculateDistanceToSite);
+    </script>
+</body>
+
+</html>

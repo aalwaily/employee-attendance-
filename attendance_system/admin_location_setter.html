@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Site Location Setter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #1a73e8;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 400px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #0d47a1;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+        }
+
+        .instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 5px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .tab-container {
+            margin: 20px 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background-color: #f1f1f1;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab-button.active {
+            background-color: #1a73e8;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Admin Site Location Setter</h1>
+        <p>Use this tool to determine the exact GPS coordinates for your work site location. These coordinates will be
+            used to validate employee attendance.</p>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="openTab(event, 'mapTab')">Interactive Map</button>
+                <button class="tab-button" onclick="openTab(event, 'manualTab')">Manual Entry</button>
+                <button class="tab-button" onclick="openTab(event, 'currentTab')">Current Location</button>
+            </div>
+
+            <div id="mapTab" class="tab-content active">
+                <p>Use the map below to find and set your work site location. You can search for an address, drag the
+                    marker to adjust the position, or click anywhere on the map to place the marker.</p>
+
+                <div class="form-group">
+                    <label for="searchAddress">Search for address:</label>
+                    <div style="display: flex;">
+                        <input type="text" id="searchAddress" placeholder="Enter address or location name">
+                        <button onclick="searchLocation()">Search</button>
+                    </div>
+                </div>
+
+                <div id="map" class="map-container"></div>
+
+                <div class="controls">
+                    <div class="form-group">
+                        <label for="mapLatitude">Latitude:</label>
+                        <input type="text" id="mapLatitude" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="mapLongitude">Longitude:</label>
+                        <input type="text" id="mapLongitude" readonly>
+                    </div>
+                    <button onclick="useMapCoordinates()">Use These Coordinates</button>
+                </div>
+            </div>
+
+            <div id="manualTab" class="tab-content">
+                <p>If you already know the exact coordinates of your work site, you can enter them manually below:</p>
+
+                <div class="controls">
+                    <div class="form-group">
+                        <label for="manualLatitude">Latitude:</label>
+                        <input type="text" id="manualLatitude" placeholder="e.g., 26.4334">
+                    </div>
+                    <div class="form-group">
+                        <label for="manualLongitude">Longitude:</label>
+                        <input type="text" id="manualLongitude" placeholder="e.g., 50.1033">
+                    </div>
+                    <button onclick="useManualCoordinates()">Use These Coordinates</button>
+                </div>
+            </div>
+
+            <div id="currentTab" class="tab-content">
+                <p>Use your current location as the work site location. This is useful if you're physically at the work
+                    site now.</p>
+
+                <button id="getCurrentLocationBtn">Get Current Location</button>
+
+                <div class="controls" id="currentLocationControls" style="display: none;">
+                    <div class="form-group">
+                        <label for="currentLatitude">Latitude:</label>
+                        <input type="text" id="currentLatitude" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="currentLongitude">Longitude:</label>
+                        <input type="text" id="currentLongitude" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="currentAccuracy">Accuracy:</label>
+                        <input type="text" id="currentAccuracy" readonly>
+                    </div>
+                    <button onclick="useCurrentCoordinates()">Use These Coordinates</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="result" class="result">
+            <h2>Site Location Set</h2>
+            <p>Your work site location has been set to the following coordinates:</p>
+            <div class="form-group">
+                <label for="finalLatitude">Latitude:</label>
+                <input type="text" id="finalLatitude" readonly>
+            </div>
+            <div class="form-group">
+                <label for="finalLongitude">Longitude:</label>
+                <input type="text" id="finalLongitude" readonly>
+            </div>
+
+            <h3>Next Steps:</h3>
+            <div class="instructions">
+                <ol>
+                    <li>Copy these coordinates and update the <code>AttendanceValidation.gs</code> file with these
+                        values.</li>
+                    <li>Open the Google Apps Script editor in your Google Sheet.</li>
+                    <li>Find the following lines at the top of the script:</li>
+                    <div class="code-block">// Site coordinates (can be customized)
+                        const SITE_LATITUDE = 26.4334;
+                        const SITE_LONGITUDE = 50.1033;</div>
+                    <li>Replace the default values with your new coordinates:</li>
+                    <div class="code-block" id="updatedCodeBlock">// Site coordinates (can be customized)
+                        const SITE_LATITUDE = 26.4334;
+                        const SITE_LONGITUDE = 50.1033;</div>
+                    <li>Save the script and it will now validate attendance based on these new coordinates.</li>
+                </ol>
+            </div>
+
+            <h3>Validation Range:</h3>
+            <p>By default, employees must be within 100 meters of these coordinates to be marked as present. You can
+                adjust this range by changing the <code>MAX_DISTANCE</code> value in the script.</p>
+
+            <button onclick="testLocation()">Test This Location</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let map;
+        let marker;
+        let geocoder;
+        let finalLatitude = null;
+        let finalLongitude = null;
+
+        // Function to open tabs
+        function openTab(evt, tabName) {
+            // Hide all tab content
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+
+            // Remove active class from all tab buttons
+            const tabButtons = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+
+            // Show the selected tab content and mark button as active
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // Initialize Google Map
+        function initMap() {
+            // Default location (can be anywhere, will be updated)
+            const defaultLocation = { lat: 26.4334, lng: 50.1033 };
+
+            // Create map
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: defaultLocation,
+                zoom: 15,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                mapTypeControl: true,
+                mapTypeControlOptions: {
+                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                    position: google.maps.ControlPosition.TOP_RIGHT
+                }
+            });
+
+            // Create geocoder for address search
+            geocoder = new google.maps.Geocoder();
+
+            // Create marker
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                draggable: true,
+                title: "Drag to set location"
+            });
+
+            // Update coordinates when marker is dragged
+            google.maps.event.addListener(marker, 'dragend', function () {
+                updateMapCoordinates(marker.getPosition());
+            });
+
+            // Allow clicking on map to move marker
+            google.maps.event.addListener(map, 'click', function (event) {
+                marker.setPosition(event.latLng);
+                updateMapCoordinates(event.latLng);
+            });
+
+            // Try to get user's current location to center the map
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    map.setCenter(userLocation);
+                    marker.setPosition(userLocation);
+                    updateMapCoordinates(userLocation);
+                }, function () {
+                    // Error getting location, use default
+                    console.log("Error getting current location. Using default.");
+                });
+            }
+        }
+
+        // Update map coordinates display
+        function updateMapCoordinates(position) {
+            document.getElementById("mapLatitude").value = position.lat().toFixed(6);
+            document.getElementById("mapLongitude").value = position.lng().toFixed(6);
+        }
+
+        // Search for a location
+        function searchLocation() {
+            const address = document.getElementById("searchAddress").value;
+
+            if (!address) return;
+
+            geocoder.geocode({ 'address': address }, function (results, status) {
+                if (status === google.maps.GeocoderStatus.OK) {
+                    map.setCenter(results[0].geometry.location);
+                    marker.setPosition(results[0].geometry.location);
+                    updateMapCoordinates(results[0].geometry.location);
+                } else {
+                    alert("Geocode was not successful for the following reason: " + status);
+                }
+            });
+        }
+
+        // Use coordinates from map
+        function useMapCoordinates() {
+            const latitude = parseFloat(document.getElementById("mapLatitude").value);
+            const longitude = parseFloat(document.getElementById("mapLongitude").value);
+
+            if (isNaN(latitude) || isNaN(longitude)) {
+                alert("Invalid coordinates. Please try again.");
+                return;
+            }
+
+            setFinalCoordinates(latitude, longitude);
+        }
+
+        // Use manually entered coordinates
+        function useManualCoordinates() {
+            const latitude = parseFloat(document.getElementById("manualLatitude").value);
+            const longitude = parseFloat(document.getElementById("manualLongitude").value);
+
+            if (isNaN(latitude) || isNaN(longitude)) {
+                alert("Invalid coordinates. Please enter valid numbers.");
+                return;
+            }
+
+            setFinalCoordinates(latitude, longitude);
+        }
+
+        // Get current location
+        document.getElementById("getCurrentLocationBtn").addEventListener("click", function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+
+                    document.getElementById("currentLatitude").value = latitude.toFixed(6);
+                    document.getElementById("currentLongitude").value = longitude.toFixed(6);
+                    document.getElementById("currentAccuracy").value = "±" + accuracy.toFixed(1) + " meters";
+
+                    document.getElementById("currentLocationControls").style.display = "block";
+                }, function (error) {
+                    let errorMessage = "";
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "Location access was denied.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "The request to get location timed out.";
+                            break;
+                        default:
+                            errorMessage = "An unknown error occurred.";
+                            break;
+                    }
+                    alert("Error getting location: " + errorMessage);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        });
+
+        // Use current location coordinates
+        function useCurrentCoordinates() {
+            const latitude = parseFloat(document.getElementById("currentLatitude").value);
+            const longitude = parseFloat(document.getElementById("currentLongitude").value);
+
+            if (isNaN(latitude) || isNaN(longitude)) {
+                alert("Invalid coordinates. Please try again.");
+                return;
+            }
+
+            setFinalCoordinates(latitude, longitude);
+        }
+
+        // Set final coordinates and show result
+        function setFinalCoordinates(latitude, longitude) {
+            finalLatitude = latitude;
+            finalLongitude = longitude;
+
+            document.getElementById("finalLatitude").value = latitude.toFixed(6);
+            document.getElementById("finalLongitude").value = longitude.toFixed(6);
+
+            // Update the code block with new coordinates
+            document.getElementById("updatedCodeBlock").textContent =
+                `// Site coordinates (can be customized)
+const SITE_LATITUDE = ${latitude.toFixed(6)};
+const SITE_LONGITUDE = ${longitude.toFixed(6)};`;
+
+            // Show result section
+            document.getElementById("result").style.display = "block";
+
+            // Scroll to result
+            document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+        }
+
+        // Test the location in the GPS test page
+        function testLocation() {
+            if (finalLatitude === null || finalLongitude === null) {
+                alert("Please set coordinates first.");
+                return;
+            }
+
+            // Open the GPS test page with the coordinates pre-filled
+            const url = `gps_test.html?lat=${finalLatitude.toFixed(6)}&lng=${finalLongitude.toFixed(6)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+
+    <!-- Load Google Maps API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap">
+        // Note: For production use, you should get a Google Maps API key and use it like this:
+        // https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap
+        // Get an API key from: https://developers.google.com/maps/documentation/javascript/get-api-key
+        // Using the API without a key will work for development but has limitations
+    </script>
+</body>
+
+</html>
